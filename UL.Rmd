@@ -1,0 +1,344 @@
+---
+title: "Unsupervised Learning"
+author : "Team Algoritma"
+date : "April 28, 2019"
+output: 
+  learnr::tutorial:
+  fig.show : 'asis'
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 99)
+Sys.setlocale('LC_ALL','C')
+
+library(dplyr)
+library(factoextra)
+library(FactoMineR)
+library(googlesheets)
+```
+
+
+
+## Bab 1 : Dimensionality Reduction
+
+Hi _Future Data Scientist_! Dalam _course_ ini kita akan membahas mengenai *Unsupervised Learning*. Apa itu unsupervised learning? Unsupervised learning merupakan cabang pembelajaran dalam machine learning di mana kita tidak menggunakan atau memiliki variabel respon $Y$ dalam analisisnya, namun kita lebih mengeksplore struktur dari variabel prediktor $X_1, X_2, ..., X_n$. Metode Unsupervised learning biasanya digunakan untuk mereduksi dimensi variabel dan clustering. Pada latihan kali ini kita akan belajar untuk mereduksi dimensi variabel menggunakan _Principal Component Analysis_(PCA) dan clustering menggunakan metode _K-Means_. 
+
+Dimensionality reduction merupakan salah satu teknik dalam mereduksi dimensi variabel dengan cara menghilangkan data-data yang redundan sebanyak-banyaknya namun tetap mempertahankan variasi dari data sebanyak-banyaknya. Jadi dapat dikatakan bahwa dalam dimensionality reduction ini kita menginginkan suatu variabel yang lebih ringkas namun tetap mengandung informasi sebanyak-banyaknya dari variabel aslinya. 
+
+Sebagai gambaran contoh, jika kita amati ketika kita ingin mengirimkan file gambar yang memiliki kualitas dan ukuran file gambar yang besar, kita kirimkan menggunakan aplikasi chat _What's App_ maka gambar tersebut akan berkurang kualitas bahkan ukuran file gambarnya. Dari file gambar aslinya mungkin kita bisa melihat file gambar tersbut dengan lebih jelas, namun setelah dikirim file gambar tersebut menjadi lebih buram atau bahkan pecah-pecah gambarnya. Hal ini membuktikan bahwa pada proses pengiriman file gambar terjadi pengurangan dimensi dari file gambar. Gambar setelah dikirim memiliki informasi yang sama banyaknya dengan file gambar aslinya. Itulah fungsi dari dimensionality reduction.
+
+_**Untuk mengetahui lebih lanjut mengenai dimensionality reduction pada file gambar dapat dibaca pada course material 3.1**_
+
+### Principal Component Analysis
+
+Dalam melakukan dimensionality reduction ini kita bisa menggunakan metode PCA seperti yang dapat kita lihat di course material. Dalam PCA kita belajar mengenai eigen vector dan eigen value yang akan digunakan untuk membentuk suatu PC baru. 
+
+_**Untuk mengetahui lebih lanjut dalam menghitung dan mendapatkan eigen value dan eigen vektor dapat dibaca pada course material 3.1.1**_
+
+Setelah mempelajari membuat PCA, sekarang coba lakukan analisis PCA menggunakan `prcomp()` dari data property di New York City (NYC).
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+property <- read.csv("data_input/nyc.csv", stringsAsFactors = F)
+str(property)
+ppt <- property %>% 
+  select(-c(X, BOROUGH, BLOCK, LOT, ZIP.CODE)) %>% 
+  mutate(LAND.SQUARE.FEET = as.integer(LAND.SQUARE.FEET),
+         GROSS.SQUARE.FEET = as.integer(GROSS.SQUARE.FEET),
+         SALE.PRICE = as.integer(SALE.PRICE)) %>% 
+  select_if(is.integer) %>% 
+  filter(complete.cases(.))
+```
+
+
+```{r echo=FALSE}
+ppt
+```
+Keterangan :
+
+ - `RESIDENTIAL.UNTIS`: Jumlah unit hunian pada properti yang terdaftar
+ - `COMMERCIAL.UNITS`: Jumlah unit komersial pada properti yang terdaftar 
+ - `TOTAL.UNITS` : Total unit baik dari unit hunian maupun unit komersial
+ - `LAND.SQUARE.FEET`: Area tanah properti terdaftar dalam kaki persegi
+ - `GROSS.SQUARE.FEET`: Total luas seluruh lantai bangunan yang diukur dari permukaan luar dinding luar bangunan, termasuk luas tanah dan ruang di dalam setiap bangunan atau struktur di properti itu
+ - `YEAR.BUILT`: Tahun unit dibangu
+ - `SALE.PRICE`: Harga yang dibayarkan untuk properti
+ - `SALE.DATE`: Tanggal properti terjual
+
+Pada data yang telah kita bangkitkan sebelumnya, kita belajar untuk menemukan nilai eigen vector dan eigen value. Pada data property di NYC kita juga akan belajar untuk menemukan nilai eigen vector dan eigen value.
+Berdasarkan pada latihan menggunakan data yang kita bangkitkan sebelumnya, cobalah cari nilai eigen vector dan eigen value pada data property di NYC dengan nama objek data `ppt`.
+
+Latihan!
+```{r}
+head(ppt)
+```
+
+
+```{r exdat, exercise = TRUE, exercise.eval = TRUE}
+# melakukan transformasi data `ppt`
+
+```
+
+
+```{r exda, exercise = TRUE, exercise.eval = TRUE}
+# mencari nilai eigen vectors data `ppt`
+
+```
+
+
+```{r exd, exercise = TRUE, exercise.eval = TRUE}
+# mencari nilai eigen values data `ppt`
+
+```
+
+Setelah menemukan nilai eigen values dan eigen vectors, mari coba lakukan analisis PCA terhadap data `ppt` dengan menggunakan function `prcomp()`. 
+
+```{r}
+# analisis PCA
+ppt.pca <- prcomp(ppt, scale = TRUE)
+
+summary(ppt.pca)
+```
+
+Selain itu, kita akan belajar untuk memvisualisasikan variabel-variabel yang ditangkap oleh PC yang terbentuk dengan menggunakan `biplot()`. 
+```{r}
+# sampling data
+ppt.small <- ppt[1:300,]
+
+biplot(prcomp(ppt.small, scale = T), cex = 0.5)
+```
+
+Dari `biplot()` atas, variabel yang paling mempengaruhi PC1 adalah `COMMERCIAL.UNITS`, `GROSS.SQUARE.FEET`, `LAND.SQUARE.FEET`, `YEAR.BUILT`, `TAX.CLASS.AT.TIME.OF.SALE`, dan `SALE.PRICE`. Sedangkan variabel yang paling mempengaruhi PC2 adalah `RESIDENTIAL.UNITS` dan `TOTAL.UNITS`.
+
+Dari `biplot()` kita juga dapat mendeteksi beberapa data yang termasuk dalam outlier (110, 114, 115, 116, 118, dan 122). Kalau kita lihat dari data-data yang menyebabkan data-data tersebut menjadi outlier.
+```{r}
+as.matrix(ppt[105:122,c(1:2,5:6,8)])
+```
+
+Latihan!
+Buatlah analisis PCA untuk data `ppt.small`.
+```{r filter, exercise = TRUE,exercise.eval = TRUE}
+
+```
+```{r filter-solution}
+ppt.small_pca <- prcomp(ppt.small, scale = T)
+ppt.small_pca
+```
+
+
+```{r letter-a, echo=FALSE}
+question("Berapa banyak PC yang kita gunakan jika kita ingin mempertahankan 85% informasi data?", type = "single",
+correct = "Yaps benar!", incorrect = "Cek lagi outputnya", allow_retry = TRUE,
+random_answer_order = FALSE,
+answer("3 PC"),
+answer("4 PC", correct = TRUE),
+answer("5 PC"),
+answer("6 PC"),
+answer("7 PC"))
+```
+
+## Bab 2 : K-Means Clustering
+
+Clustering analysis merupakan salah satu metode yang bertujuan untuk mengelompokkan beberapa data dalam suatu dataset menjadi beberapa kelompok, di mana data yang terkelompok menjadi satu kelompok memiliki kemiripan sedangkan jika dengan kelompok lain memiliki perbedaan. K-means clustering merupakan salah satu metode yang digunakan untuk melakukan clustering analysis yang berbasis centroid (pusat cluster) yang mana jumlah clusternya telah ditentukan terlebih dahulu diawal sebanyak "k". 
+
+Tahapan melakukan k-means clustering yaitu :
+
+1. Menentukan "k" (banyak cluster)
+2. Menentukan pusat masing-masing cluster (centroid) secara random
+3. Menghitung jarak antar data ke setiap centroid
+4. Tetapkan anggota cluster 
+5. Ulangi langkah 2-4 hingga anggota cluster tidak berubah-ubah lagi
+
+_**Untuk materi lebih lengkap, bisa dibaca pada course material 4. K-Means Clustering**_
+
+Untuk R sendiri sudah memiliki algoritma yang digunakan untuk melakukan k-means clustering yaitu menggunakan function `kmeans()`. Untuk lebih jelasnya, mari kita coba mengelompokkan data-data whiskies berdasarkan masing-masing kandungan yang ada pada data `whiskies` dibawah ini.
+
+
+```{r, echo=FALSE}
+whiskies <- read.csv("data_input/whiskies.txt") %>% 
+  select(-c(RowID, Postcode, Latitude, Longitude)) 
+
+whiskies
+```
+
+Pada data whiskies diatas, terdapat 13 variabel diantaranya 1 variabel factor dan 12 variabel integer. Dalam melakukan k-means analysis, kita hanya bisa menggunakan variabel dalam bentuk integer maupun numerik. Jadi untuk data yang berupa factor atau character tidak kita ikut sertakan dalam analisis. 
+
+Selanjutnya perhatikan terlebih dahulu apakah range data untuk masing-masing variabel yang akan kita gunakan sudah sama atau belum. Jika belum, maka kita gunakan transformasi data atau scaling data agar range data untuk masing-masing variabel sama. Hal ini dilakukan agar dalam perhitungan jarak antar titik/data terhadap centroid dapat tergambarkan dengan jelas. 
+
+Oke, mari kita lakukan K-means analysis.
+
+### Lakukan transformasi data
+```{r kmeans, exercise = TRUE, exercise.eval = TRUE}
+
+```
+```{r kmeans-solution}
+whiskies.z <- scale(whiskies[,-1])
+```
+
+### Menentukan nilai k
+
+Selanjutnya kita akan menentukan banyak cluster (k) yang akan dibuat. Dalam menentukan k kita bisa menggunakan metode Elbow dengan melihat pada cluster mana yang menunjukkan patahan elbow (siku) yang mulai landai.
+
+Seperti pada _coutse material_, kita gunakan fungsi `wss()` yang ada.
+```{r}
+set.seed(100)
+wss <- function(data, maxCluster = 9) {
+    # Initialize within sum of squares
+    SSw <- (nrow(data) - 1) * sum(apply(data, 2, var))
+    SSw <- vector()
+    for (i in 2:maxCluster) {
+        SSw[i] <- sum(kmeans(data, centers = i)$withinss)
+    }
+    plot(1:maxCluster, SSw, type = "o", xlab = "Number of Clusters", ylab = "Within groups sum of squares", pch=19)
+}
+```
+```{r k, exercise = TRUE, exercise.eval = TRUE}
+# menentukan k 
+
+```
+```{r k-solution}
+wss(whiskies.z)
+```
+
+### Melakukan k-means clustering analysis
+
+Untuk melakukan k-means analysis bisa menggunakan function `kmeans()` dan memasukkan banyak cluster yang telah dipilih berdasarkan metode Elbow sebelumnya.
+```{r clust, exercise = TRUE, exercise.eval = TRUE}
+# set.seed(100)
+# whis.km <- kmeans(data, k=..)
+```
+```{r clust-solution}
+set.seed(100)
+whis.km <- kmeans(whiskies.z, 5)
+```
+
+Selanjutnya pada hasil cluster yang terbentuk, jawablah beberapa bertanyaan dibawah ini.
+
+Latihan!
+
+```{r letter-b, echo=FALSE}
+quiz(
+  question("1. Berapa anggota untuk maisng-masing cluster?", 
+           type = "single",correct = "Yaps benar!", 
+           incorrect = "Coba cek lagi pada cluster sizenya", 
+           allow_retry = TRUE, random_answer_order = FALSE,
+           answer("22, 13, 8, 21, 22"), answer("13, 6, 8, 13, 46"),
+           answer("22, 6, 22, 14, 22",correct = TRUE)),
+  question("2. Berapa nilai between_SS/total_SS nya?", type = "single",
+           correct = "Yaps benar!", incorrect = "Coba cek lagi pada outputnya",
+           allow_retry = TRUE, random_answer_order = FALSE,
+           answer("56%"), answer("38.9%", correct = TRUE), answer("26.9")),
+  question("3. Bagaimanakah cluster yang baik itu?", type = "single", 
+           correct = "Yeay benar!", 
+           incorrect = "Masa iya? Baca lagi course materialnya yaa", 
+           allow_retry = TRUE, random_answer_order = FALSE,
+           answer("Antar cluster anggotanya memiliki kemiripan, namun dalam satu cluster anggotanya memiliki perbedaan"),
+           answer("Antar cluster anggotanya memiliki perbedaan, namun dalam satu cluster anggotanya memiliki kemiripan", correct = TRUE),
+           answer("Antar cluster dan dalam satu cluster anggotanya memiliki kemiripan")))
+```
+
+## Bab 3 : PCA dan K-Means 
+
+Setelah belajar dalam melakukan analisis PCA dan juga k-means, sekarang mari kita coba dalam menerapkan keduanya secara bersamaan untuk data `whiskies`. 
+
+### Melakukan analisis PCA
+
+Berdasarkan dari data yang telah ditransformasi `whiskies.z`, lakukan analisis PCA menggunakan `FactoMineR`.
+```{r pca, exercise = TRUE, exercise.eval = TRUE}
+# library(FactoMineR)
+# whi.pca <- PCA(data, graph = F)
+```
+```{r pca-solution}
+whi.pca <- PCA(whiskies.z, graph = F)
+```
+
+### Melakukan analisis k-means
+Pada analisis k-means ini, lakukan k-means menjadi 5 kelompok.
+```{r pcak, exercise = TRUE, exercise.eval = TRUE}
+# whis.km <- 
+```
+```{r pcak-solution}
+whis.km <- kmeans(whiskies.z, 5)
+```
+
+### Memasukkan hasil dari cluster ke dalam data frame `whiskies`
+Setelah membuat analisis k-means, masukkan hasil cluster pada `whis.km$cluster` ke dalam data frame `whiskies`.
+```{r input, exercise = TRUE, exercise.eval = TRUE}
+# whiskies$cluster <- 
+```
+```{r input-solution}
+whiskies$cluster <- as.factor(whis.km$cluster)
+```
+
+### Membuat biplot dengan label cluster
+Selanjutnya membuat biplot dengan menampilkan masing-masing observasi dan memberikan label hasil cluster yang terbentuk.
+```{r label, exercise = TRUE, exercise.eval = TRUE}
+
+```
+```{r label-solution}
+plot(whi.pca, choix=c("ind"), label="none", col.ind=whiskies$cluster)
+legend("topright", levels(whiskies$cluster), pch=19, col=1:5)
+```
+
+Dari hasil biplot kita dapat melihat sebaran data-data `whiskies` yang sudah terkelompokkan berdasarkan masing-masing clusternya. 
+
+## Quiz
+Quiz ini akan tersimpan, pastikan Anda menggunakan nama asli Anda. Untuk informasi lebih lanjut tentang workshop, Anda bisa kunjungi kami di [Algoritma](https://goo.gl/GCqodq). Jangan lupa kumpulkan Learn by Building dan untuk pertanyaan lebih lanjut kamu dapat hubungi kami di mentor@algorit.ma.
+
+```{r, echo= FALSE}
+fluidPage(
+  textAreaInput("name","Nama:",width = "200px"),
+    radioButtons("q1", label = "Apa yang dimaksud dengan unsupervised learning?", choices = c("Metode untuk melakukan prediksi" = "0",
+                 "Metode yang memiliki target variabel yang jelas" = "0",
+                 "Metode yang tidak memiliki target variabel" = "1",
+                 "Gabungan dari metode linear regression dan logistic regression" = "0")),
+      radioButtons("q2", label = "Apa yang dilakukan oleh PCA?", choices = c("Mengelompokkan data sesuai dengan karakteristiknya" = "0",
+                 "Mengklasifikasikan data berdasarkan kategori dalam target variabel" = "0",
+                 "Melakukan prediksi secara numerik" = "0",
+                 "Melakukan reduksi dimensi dari variabel" = "1")),
+        radioButtons("q3", label = "Manakah pernyataan dibawah ini yang SALAH berdasarkan PCA", choices = c("PCA melakukan reduksi dimensi dari variabel" = "0",
+                 "PC yang paling akhir menangkap informasi paling besar" = "1",
+                 "Jumlah PC yang terbentuk sesuai dengan banyak variabel yang ada" = "0",
+                 "Setiap PC yang terbentuk mencakup informasi dari keseluruhan variabel" = "0")),
+        radioButtons("q4", label = "Apa yang dilakukan k-means dalam mengelompokkan data?", choices = c("Menghitung jarak tiap data dengan centroid" = "1",
+                 "Melakukan prediksi" = "0",
+                 "Mereduksi dimensi data" = "0",
+                 "Membandingkan antar data dan memiliki yang paling kecil nilainya" = "0")),
+        radioButtons("q5", label = "Apa metode yang dapat digunakan uneuk menentukan k dalam k-means?", choices = c("R-Squared" = "0",
+                 "Elbow" = "1",
+                 "AIC" = "0",
+                 "Centroid" = "0")),
+  actionButton("submit", label = "Submit", icon("rocket"), style="color: #fff; background-color: #696969; border-color: #2e6da4"),br(),br(),br()
+)
+```
+
+```{r,context="server"}
+observeEvent(input$submit, {
+    
+    #call the google spreedsheet
+    dtoken <- readRDS('doyo.rds')
+    gs_auth(token = dtoken)
+    gs_object <- gs_key("1zH67DovhYCEH9J5anKxZMYNoc03RM-RDuCLjZXCaGGM")
+    user.data.quiz <- gs_read_listfeed(gs_object, ws = "Classification1")
+    
+      
+      # save your answer and count the score
+    Sys.setenv(TZ='Asia/Jakarta')
+    score <- as.numeric(input$q1)+as.numeric(input$q2)+as.numeric(input$q3)+as.numeric(input$q4)+as.numeric(input$q5)
+    finallist <- c(input$name,format(Sys.time(), format="%B %d %X"), input$q1,input$q2,input$q3,input$q4,input$q5,score)
+    gs_add_row(gs_object, ws='UL', input=finallist)
+    cat('stored')
+      
+      # showing the modal Dialog if you haven't submit yet
+    showModal(modalDialog(
+      title = "Congratss! ",paste("You got ", score, " out of 5 correct!")
+      ,easyClose = TRUE))
+    
+  })
+```
+
+
+#### Don't stop learning!!
+See yaa!!!
+
